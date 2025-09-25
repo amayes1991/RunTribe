@@ -1,0 +1,49 @@
+# Cursor Rules for RunTribe Project
+
+## Project Overview
+This is a full-stack running community application with:
+- Backend: .NET 8 Web API with Entity Framework Core and SQLite
+- Frontend: Next.js 14 with App Router, Tailwind CSS, and NextAuth.js
+
+## File Organization
+- Backend code is in `RunTribe.Api/`
+- Frontend code is in `runtribe/`
+- Database file: `RunTribe.Api/RunTribeDb.db`
+
+## Coding Conventions
+
+### Backend (.NET)
+- Use C# naming conventions (PascalCase for classes, camelCase for variables)
+- Controllers should follow RESTful conventions
+- Models should use data annotations for validation
+- Use async/await for database operations
+- Follow Entity Framework Core best practices
+
+### Frontend (Next.js)
+- Use JavaScript/JSX with modern ES6+ syntax
+- Follow Next.js App Router conventions
+- Use Tailwind CSS for styling
+- Implement responsive design
+- Use NextAuth.js for authentication
+
+## Key Patterns
+- API endpoints in `RunTribe.Api/Controllers/`
+- Data models in `RunTribe.Api/Models/`
+- Database context in `RunTribe.Api/DbContext/`
+- Frontend pages in `runtribe/app/`
+- Static assets in `runtribe/public/`
+
+## Common Tasks
+- When adding new features, consider both backend API and frontend UI
+- Database changes require Entity Framework migrations
+- Authentication flows involve both NextAuth.js and JWT tokens
+- API responses should follow consistent JSON structure
+
+## Dependencies
+- Backend: .NET 8, Entity Framework Core, SQLite
+- Frontend: Next.js 14, Tailwind CSS, NextAuth.js
+- Development: ESLint, PostCSS
+
+## Database Schema
+Main entities: Users, Groups, GroupMembers, Meetups, Posts, Comments, Cities
+Relationships: Many-to-many between Users and Groups, one-to-many for Posts/Comments 
