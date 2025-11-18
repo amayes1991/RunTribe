@@ -115,10 +115,27 @@ else
 app.UseStaticFiles();
 
 // Serve static files from uploads directory
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+// Create uploads directory and subdirectories if they don't exist
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+// Create subdirectories for organized file storage
+var groupsUploadPath = Path.Combine(uploadsPath, "groups");
+var shoesUploadPath = Path.Combine(uploadsPath, "shoes");
+if (!Directory.Exists(groupsUploadPath))
+{
+    Directory.CreateDirectory(groupsUploadPath);
+}
+if (!Directory.Exists(shoesUploadPath))
+{
+    Directory.CreateDirectory(shoesUploadPath);
+}
+
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads"
 });
 
