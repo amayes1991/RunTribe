@@ -14,11 +14,30 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
 // Add Entity Framework and Database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (connectionString.Contains("PostgreSQL") || connectionString.Contains("postgres"))
+// Railway provides DATABASE_PUBLIC_URL for PostgreSQL, .NET expects ConnectionStrings:DefaultConnection
+// Check multiple environment variable formats
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection', 'DATABASE_URL', or 'DATABASE_PUBLIC_URL' not found.");
+
+// Detect database type from connection string
+// Railway PostgreSQL format: postgresql://user:pass@host:port/db
+// Standard PostgreSQL format: Host=...;Port=...;Database=...
+var lowerConnection = connectionString.ToLowerInvariant();
+if (lowerConnection.Contains("postgresql://") || 
+    lowerConnection.Contains("postgres://") ||
+    lowerConnection.Contains("postgresql") || 
+    lowerConnection.Contains("postgres") ||
+    (connectionString.Contains("Host=") && connectionString.Contains("Port=") && !connectionString.Contains("1433")))
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(connectionString));
+}
+else if (connectionString.Contains(".db") || connectionString.Contains("Data Source"))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite(connectionString));
 }
 else
 {
