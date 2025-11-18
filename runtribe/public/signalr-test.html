@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalR Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .message { background-color: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        input, button { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>SignalR Connection Test</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div>
+        <input type="text" id="groupId" placeholder="Group ID" value="test-group">
+        <button onclick="joinGroup()">Join Group</button>
+        <button onclick="leaveGroup()">Leave Group</button>
+    </div>
+    
+    <div>
+        <input type="text" id="message" placeholder="Message">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+    
+    <div>
+        <h3>Messages:</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("http://localhost:5071/chathub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveMessage", (message) => {
+            addMessage(`Received: ${message.content} from ${message.user.email}`);
+        });
+
+        connection.on("UserTyping", (userEmail) => {
+            addMessage(`${userEmail} is typing...`);
+        });
+
+        connection.on("UserStoppedTyping", (userEmail) => {
+            addMessage(`${userEmail} stopped typing`);
+        });
+
+        connection.on("MessageDeleted", (messageId) => {
+            addMessage(`Message ${messageId} was deleted`);
+        });
+
+        connection.start()
+            .then(() => {
+                updateStatus(true);
+                addMessage("Connected to SignalR hub");
+            })
+            .catch(err => {
+                updateStatus(false);
+                addMessage(`Connection failed: ${err}`);
+            });
+
+        function updateStatus(connected) {
+            const status = document.getElementById('status');
+            status.textContent = connected ? 'Connected' : 'Disconnected';
+            status.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        function addMessage(text) {
+            const messages = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.textContent = text;
+            messages.appendChild(div);
+        }
+
+        function joinGroup() {
+            const groupId = document.getElementById('groupId').value;
+            connection.invoke("JoinGroup", groupId)
+                .then(() => addMessage(`Joined group: ${groupId}`))
+                .catch(err => addMessage(`Failed to join group: ${err}`));
+        }
+
+        function leaveGroup() {
+            const groupId = document.getElementById('groupId').value;
+            connection.invoke("LeaveGroup", groupId)
+                .then(() => addMessage(`Left group: ${groupId}`))
+                .catch(err => addMessage(`Failed to leave group: ${err}`));
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            const groupId = document.getElementById('groupId').value;
+            
+            if (message.trim()) {
+                const messageObj = {
+                    id: Date.now().toString(),
+                    content: message,
+                    user: { email: 'test@example.com', name: 'Test User' },
+                    createdAt: new Date().toISOString()
+                };
+                
+                connection.invoke("SendMessage", groupId, messageObj)
+                    .then(() => {
+                        addMessage(`Sent: ${message}`);
+                        document.getElementById('message').value = '';
+                    })
+                    .catch(err => addMessage(`Failed to send message: ${err}`));
+            }
+        }
+    </script>
+</body>
+</html>
+

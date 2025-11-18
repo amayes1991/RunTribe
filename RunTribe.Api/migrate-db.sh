@@ -15,3 +15,6 @@ dotnet ef migrations add ProductionPostgreSQL --context ApplicationDbContext
 dotnet ef database update --context ApplicationDbContext
 
 echo "Database migration completed!"
+
+
+

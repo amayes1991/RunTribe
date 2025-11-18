@@ -217,3 +217,6 @@ docker exec -it runtribe-api bash
 - Optimize images
 - Implement caching strategies
 - Use CDN for static assets
+
+
+
