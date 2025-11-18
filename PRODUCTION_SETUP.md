@@ -84,9 +84,9 @@ railway run dotnet ef database update
 - The migration will use the PostgreSQL database from `DATABASE_URL`
 - If you see SQLite errors, verify the environment variables are set correctly
 
-### Option 2: Using Railway Dashboard (Recommended)
+### Option 2: Using Railway Dashboard (⭐ RECOMMENDED)
 
-This method ensures all environment variables are properly loaded.
+**This is the most reliable method** - it ensures all environment variables are properly loaded and the connection string is correctly formatted.
 
 1. Go to Railway Dashboard → Your Project → **`runners-app`** service
 2. Click on **"Deployments"** tab
@@ -94,7 +94,13 @@ This method ensures all environment variables are properly loaded.
 4. Enter: `dotnet ef database update`
 5. Click **"Deploy"**
 
-**Note**: This runs the command in the Railway environment with all variables properly set, so it's the most reliable method.
+**Why this works better:**
+- All environment variables are automatically available
+- Connection strings are properly formatted
+- No need to manually set variables in CLI
+- Most reliable for first-time setup
+
+**If you see connection errors with CLI**, use this method instead.
 
 ### Option 3: Using Railway Shell
 
@@ -186,9 +192,12 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 
 **Error**: "Format of the initialization string does not conform to specification"
 - **Solution**: 
-  1. Verify `DATABASE_URL` is set correctly in Railway Variables
-  2. Make sure you copied the entire connection string from `DATABASE_PUBLIC_URL`
-  3. Try using Railway Dashboard's "Run Command" instead of CLI
+  1. **Use Railway Dashboard's "Run Command" method** (Option 2) - this is the most reliable
+  2. If using CLI, verify `DATABASE_URL` is set correctly in Railway Variables
+  3. Make sure you copied the entire connection string from `DATABASE_PUBLIC_URL` (no line breaks)
+  4. The design-time factory (`ApplicationDbContextFactory`) should automatically detect PostgreSQL from the URI format
+
+**Note**: If CLI migrations fail, the Railway Dashboard "Run Command" method almost always works because it has proper environment variable handling.
 
 ### Migration Errors
 

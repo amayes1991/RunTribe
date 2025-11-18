@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RunTribe.Api.DbContext;
 using Microsoft.Extensions.FileProviders;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,7 +61,24 @@ builder.Services.AddCors(options =>
     // Production CORS policy
     options.AddPolicy("Production", policy =>
     {
-        var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Split(',') ?? new[] { "http://localhost:3000" };
+        // Read from array in appsettings or comma-separated string from environment variable
+        var corsSection = builder.Configuration.GetSection("Cors:AllowedOrigins");
+        string[] allowedOrigins;
+        
+        if (corsSection.Exists() && corsSection.GetChildren().Any())
+        {
+            // Read from JSON array
+            allowedOrigins = corsSection.Get<string[]>() ?? new[] { "http://localhost:3000" };
+        }
+        else
+        {
+            // Read from comma-separated string (environment variable)
+            var corsString = builder.Configuration["Cors:AllowedOrigins"];
+            allowedOrigins = !string.IsNullOrEmpty(corsString) 
+                ? corsString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                : new[] { "http://localhost:3000" };
+        }
+        
         policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
