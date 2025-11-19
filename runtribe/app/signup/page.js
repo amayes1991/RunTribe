@@ -65,7 +65,7 @@ export default function Signup() {
 
     try {
       // Call the backend API to create the user
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       const signupResponse = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         headers: {
