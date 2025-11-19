@@ -17,10 +17,40 @@ builder.Services.AddSignalR();
 // Add Entity Framework and Database
 // Railway provides DATABASE_PUBLIC_URL for PostgreSQL, .NET expects ConnectionStrings:DefaultConnection
 // Check multiple environment variable formats
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection', 'DATABASE_URL', or 'DATABASE_PUBLIC_URL' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Check if connection string is empty or null, then try environment variables
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+        ?? Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL");
+}
+
+// Log for debugging (remove sensitive info)
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    var env = builder.Environment.EnvironmentName;
+    var hasDbUrl = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL"));
+    var hasDbPublicUrl = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_PUBLIC_URL"));
+    var configConn = builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    Console.WriteLine($"[DB Config] Environment: {env}");
+    Console.WriteLine($"[DB Config] DATABASE_URL exists: {hasDbUrl}");
+    Console.WriteLine($"[DB Config] DATABASE_PUBLIC_URL exists: {hasDbPublicUrl}");
+    Console.WriteLine($"[DB Config] Config DefaultConnection: {(string.IsNullOrWhiteSpace(configConn) ? "empty" : "set")}");
+    
+    throw new InvalidOperationException(
+        $"Connection string not found in {env} environment. " +
+        $"DATABASE_URL: {(hasDbUrl ? "set" : "not set")}, " +
+        $"DATABASE_PUBLIC_URL: {(hasDbPublicUrl ? "set" : "not set")}, " +
+        $"Config DefaultConnection: {(string.IsNullOrWhiteSpace(configConn) ? "empty" : "set")}. " +
+        "Please set DATABASE_URL or DATABASE_PUBLIC_URL in Railway Variables.");
+}
+
+// Log connection string type (without sensitive data)
+var dbType = connectionString.ToLowerInvariant().Contains("postgres") ? "PostgreSQL" 
+    : connectionString.Contains(".db") ? "SQLite" 
+    : "SQL Server";
+Console.WriteLine($"[DB Config] Using {dbType} database");
 
 // Detect database type from connection string
 // Railway PostgreSQL format: postgresql://user:pass@host:port/db
