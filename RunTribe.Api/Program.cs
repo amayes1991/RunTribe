@@ -47,11 +47,17 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Please set DATABASE_URL or DATABASE_PUBLIC_URL in Railway Variables.");
 }
 
+// Clean and validate connection string
+connectionString = connectionString.Trim();
+// Remove any newlines or extra whitespace that might cause parsing issues
+connectionString = string.Join("", connectionString.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
 // Log connection string type (without sensitive data)
 var dbType = connectionString.ToLowerInvariant().Contains("postgres") ? "PostgreSQL" 
     : connectionString.Contains(".db") ? "SQLite" 
     : "SQL Server";
 Console.WriteLine($"[DB Config] Using {dbType} database");
+Console.WriteLine($"[DB Config] Connection string length: {connectionString.Length}");
 
 // Detect database type from connection string
 // Railway PostgreSQL format: postgresql://user:pass@host:port/db
@@ -63,8 +69,10 @@ if (lowerConnection.Contains("postgresql://") ||
     lowerConnection.Contains("postgres") ||
     (connectionString.Contains("Host=") && connectionString.Contains("Port=") && !connectionString.Contains("1433")))
 {
+    // Npgsql supports URI format directly, but ensure it's clean
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(connectionString));
+        options.UseNpgsql(connectionString, npgsqlOptions => 
+            npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3)));
 }
 else if (connectionString.Contains(".db") || connectionString.Contains("Data Source"))
 {
