@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RunTribe.Api.DbContext;
 using Microsoft.Extensions.FileProviders;
 using System.Linq;
+using System.Collections.Generic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,10 +110,31 @@ builder.Services.AddCors(options =>
                 : new[] { "http://localhost:3000" };
         }
         
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        // Add Vercel preview domains dynamically (all *.vercel.app domains)
+        var vercelOrigins = new List<string>(allowedOrigins);
+        vercelOrigins.Add("https://*.vercel.app");
+        vercelOrigins.Add("http://*.vercel.app");
+        
+        // Use SetIsOriginAllowed to allow Vercel preview domains
+        policy.SetIsOriginAllowed(origin =>
+        {
+            // Allow exact matches from config
+            if (allowedOrigins.Contains(origin))
+                return true;
+            
+            // Allow all Vercel preview domains (*.vercel.app)
+            if (origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            // Allow localhost for development
+            if (origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            return false;
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
 });
 
