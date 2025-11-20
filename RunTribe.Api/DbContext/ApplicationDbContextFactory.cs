@@ -19,9 +19,32 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
             (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || 
              connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)))
         {
-            // Npgsql supports URI format directly, but let's ensure it's properly formatted
             // Remove any whitespace/newlines
             connectionString = connectionString.Trim();
+            
+            // Convert URI format to standard PostgreSQL connection string
+            try
+            {
+                var uri = new Uri(connectionString);
+                var builder = new System.Text.StringBuilder();
+                builder.Append($"Host={uri.Host};");
+                if (uri.Port > 0) builder.Append($"Port={uri.Port};");
+                builder.Append($"Database={uri.AbsolutePath.TrimStart('/')};");
+                builder.Append($"Username={uri.UserInfo.Split(':')[0]};");
+                if (uri.UserInfo.Contains(':'))
+                {
+                    var password = uri.UserInfo.Split(':', 2)[1];
+                    // URL decode the password in case it has special characters
+                    password = Uri.UnescapeDataString(password);
+                    builder.Append($"Password={password};");
+                }
+                builder.Append("SSL Mode=Require;");
+                connectionString = builder.ToString();
+            }
+            catch
+            {
+                // If conversion fails, use original - Npgsql might handle it
+            }
         }
 
         // Detect database type from connection string

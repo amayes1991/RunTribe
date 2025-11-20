@@ -52,16 +52,45 @@ connectionString = connectionString.Trim();
 // Remove any newlines or extra whitespace that might cause parsing issues
 connectionString = string.Join("", connectionString.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
 
+// Convert PostgreSQL URI format to standard connection string if needed
+// Railway format: postgresql://user:pass@host:port/db
+if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || 
+    connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        var uri = new Uri(connectionString);
+        var connBuilder = new System.Text.StringBuilder();
+        connBuilder.Append($"Host={uri.Host};");
+        if (uri.Port > 0) connBuilder.Append($"Port={uri.Port};");
+        connBuilder.Append($"Database={uri.AbsolutePath.TrimStart('/')};");
+        connBuilder.Append($"Username={uri.UserInfo.Split(':')[0]};");
+        if (uri.UserInfo.Contains(':'))
+        {
+            var password = uri.UserInfo.Split(':', 2)[1];
+            // URL decode the password in case it has special characters
+            password = Uri.UnescapeDataString(password);
+            connBuilder.Append($"Password={password};");
+        }
+        connBuilder.Append("SSL Mode=Require;");
+        connectionString = connBuilder.ToString();
+        Console.WriteLine("[DB Config] Converted PostgreSQL URI to standard format");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DB Config] Warning: Could not parse URI format: {ex.Message}");
+        // Continue with original format - Npgsql might handle it
+    }
+}
+
 // Log connection string type (without sensitive data)
-var dbType = connectionString.ToLowerInvariant().Contains("postgres") ? "PostgreSQL" 
+var dbType = connectionString.ToLowerInvariant().Contains("postgres") || connectionString.Contains("Host=") ? "PostgreSQL" 
     : connectionString.Contains(".db") ? "SQLite" 
     : "SQL Server";
 Console.WriteLine($"[DB Config] Using {dbType} database");
 Console.WriteLine($"[DB Config] Connection string length: {connectionString.Length}");
 
 // Detect database type from connection string
-// Railway PostgreSQL format: postgresql://user:pass@host:port/db
-// Standard PostgreSQL format: Host=...;Port=...;Database=...
 var lowerConnection = connectionString.ToLowerInvariant();
 if (lowerConnection.Contains("postgresql://") || 
     lowerConnection.Contains("postgres://") ||
@@ -69,7 +98,7 @@ if (lowerConnection.Contains("postgresql://") ||
     lowerConnection.Contains("postgres") ||
     (connectionString.Contains("Host=") && connectionString.Contains("Port=") && !connectionString.Contains("1433")))
 {
-    // Npgsql supports URI format directly, but ensure it's clean
+    // Use Npgsql with the connection string
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseNpgsql(connectionString, npgsqlOptions => 
             npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3)));
