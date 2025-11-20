@@ -37,17 +37,17 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
              connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase));
 
         // Convert PostgreSQL URI format to standard connection string if needed
+        // Npgsql supports URI format, but we'll convert for consistency
+        string? convertedConnectionString = null;
         if (isPostgresUri && !string.IsNullOrEmpty(connectionString))
         {
             // Remove any whitespace/newlines
-            connectionString = connectionString.Trim();
+            var cleanConnectionString = connectionString.Trim();
             
             // Convert URI format to standard PostgreSQL connection string
             try
             {
-                if (string.IsNullOrEmpty(connectionString)) throw new ArgumentException("Connection string is null or empty");
-                
-                var uri = new Uri(connectionString);
+                var uri = new Uri(cleanConnectionString);
                 var builder = new System.Text.StringBuilder();
                 builder.Append($"Host={uri.Host};");
                 if (uri.Port > 0) builder.Append($"Port={uri.Port};");
@@ -62,47 +62,61 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
                         if (userParts.Length > 1)
                         {
                             var password = userParts[1];
-                            // URL decode the password in case it has special characters
-                            password = Uri.UnescapeDataString(password);
+                            // Don't URL decode - the password might already be in the correct format
+                            // Only decode if it contains encoded characters
+                            if (password.Contains("%"))
+                            {
+                                password = Uri.UnescapeDataString(password);
+                            }
                             builder.Append($"Password={password};");
                         }
                     }
                 }
                 builder.Append("SSL Mode=Require;");
-                connectionString = builder.ToString();
+                convertedConnectionString = builder.ToString();
+                Console.WriteLine("[Design-Time DB Config] Converted URI to standard format");
             }
-            catch
+            catch (Exception ex)
             {
-                // If conversion fails, use original - Npgsql might handle it
+                Console.WriteLine($"[Design-Time DB Config] URI conversion failed: {ex.Message}, using original URI format");
+                // If conversion fails, Npgsql should handle URI format directly
             }
         }
+        
+        // Use converted string if available, otherwise use original (Npgsql supports URI format)
+        var finalConnectionString = convertedConnectionString ?? connectionString;
 
         // Detect database type from connection string
         // After conversion, check for standard PostgreSQL format (Host=, Port=) or original URI format
-        var lowerConnection = !string.IsNullOrEmpty(connectionString) ? connectionString.ToLowerInvariant() : string.Empty;
+        var lowerConnection = !string.IsNullOrEmpty(finalConnectionString) ? finalConnectionString.ToLowerInvariant() : string.Empty;
         var isPostgres = isPostgresUri || 
             lowerConnection.Contains("postgresql") || 
             lowerConnection.Contains("postgres") ||
-            (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Host=") && connectionString.Contains("Port=") && !connectionString.Contains("1433"));
+            (!string.IsNullOrEmpty(finalConnectionString) && finalConnectionString.Contains("Host=") && finalConnectionString.Contains("Port=") && !finalConnectionString.Contains("1433"));
         
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         
         if (isPostgres)
         {
             // Use Npgsql - it supports both URI and standard format
-            if (string.IsNullOrEmpty(connectionString))
+            if (string.IsNullOrEmpty(finalConnectionString))
                 throw new InvalidOperationException("PostgreSQL connection string is null or empty");
-            optionsBuilder.UseNpgsql(connectionString);
+            
+            // If original was URI format and conversion succeeded, use converted
+            // Otherwise, Npgsql can handle URI format directly
+            var connectionToUse = convertedConnectionString ?? connectionString;
+            Console.WriteLine($"[Design-Time DB Config] Using {(convertedConnectionString != null ? "converted" : "original URI")} connection string format");
+            optionsBuilder.UseNpgsql(connectionToUse);
         }
-        else if (!string.IsNullOrEmpty(connectionString) && (connectionString.Contains(".db") || connectionString.Contains("Data Source")))
+        else if (!string.IsNullOrEmpty(finalConnectionString) && (finalConnectionString.Contains(".db") || finalConnectionString.Contains("Data Source")))
         {
-            optionsBuilder.UseSqlite(connectionString);
+            optionsBuilder.UseSqlite(finalConnectionString);
         }
         else
         {
-            if (string.IsNullOrEmpty(connectionString))
+            if (string.IsNullOrEmpty(finalConnectionString))
                 throw new InvalidOperationException("Connection string is null or empty");
-            optionsBuilder.UseSqlServer(connectionString);
+            optionsBuilder.UseSqlServer(finalConnectionString);
         }
 
         return new ApplicationDbContext(optionsBuilder.Options);
