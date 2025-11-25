@@ -54,22 +54,47 @@ connectionString = string.Join("", connectionString.Split(new[] { '\r', '\n' }, 
 
 // Convert PostgreSQL URI format to standard connection string if needed
 // Railway format: postgresql://user:pass@host:port/db
+// Npgsql supports URI format directly, but we'll convert for better compatibility
 if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) || 
     connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
 {
     try
     {
-        var uri = new Uri(connectionString);
-        var connBuilder = new System.Text.StringBuilder();
-        connBuilder.Append($"Host={uri.Host};");
-        if (uri.Port > 0) connBuilder.Append($"Port={uri.Port};");
-        connBuilder.Append($"Database={uri.AbsolutePath.TrimStart('/')};");
-        connBuilder.Append($"Username={uri.UserInfo.Split(':')[0]};");
-        if (uri.UserInfo.Contains(':'))
+        // Use UriBuilder for more robust parsing, or parse manually
+        var uriString = connectionString.Trim();
+        
+        // Try using Uri class first
+        var uri = new Uri(uriString);
+        
+        // Extract components
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432; // Default PostgreSQL port
+        var database = uri.AbsolutePath.TrimStart('/');
+        
+        // Parse user info (username:password)
+        string username = "postgres";
+        string password = "";
+        if (!string.IsNullOrEmpty(uri.UserInfo))
         {
-            var password = uri.UserInfo.Split(':', 2)[1];
-            // URL decode the password in case it has special characters
-            password = Uri.UnescapeDataString(password);
+            var userInfoParts = uri.UserInfo.Split(':', 2);
+            if (userInfoParts.Length > 0)
+            {
+                username = Uri.UnescapeDataString(userInfoParts[0]);
+            }
+            if (userInfoParts.Length > 1)
+            {
+                password = Uri.UnescapeDataString(userInfoParts[1]);
+            }
+        }
+        
+        // Build standard connection string
+        var connBuilder = new System.Text.StringBuilder();
+        connBuilder.Append($"Host={host};");
+        connBuilder.Append($"Port={port};");
+        connBuilder.Append($"Database={database};");
+        connBuilder.Append($"Username={username};");
+        if (!string.IsNullOrEmpty(password))
+        {
             connBuilder.Append($"Password={password};");
         }
         connBuilder.Append("SSL Mode=Require;");
@@ -79,7 +104,10 @@ if (connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreC
     catch (Exception ex)
     {
         Console.WriteLine($"[DB Config] Warning: Could not parse URI format: {ex.Message}");
-        // Continue with original format - Npgsql might handle it
+        Console.WriteLine($"[DB Config] Using original URI format - Npgsql should handle it");
+        // Continue with original format - Npgsql supports URI format directly
+        // Just ensure it's trimmed
+        connectionString = connectionString.Trim();
     }
 }
 
