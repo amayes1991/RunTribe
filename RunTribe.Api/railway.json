@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
+    "releaseCommand": "dotnet ef database update",
     "startCommand": "dotnet RunTribe.Api.dll",
     "healthcheckPath": "/weatherforecast",
     "healthcheckTimeout": 100,

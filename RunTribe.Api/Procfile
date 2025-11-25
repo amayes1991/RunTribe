@@ -1,0 +1,3 @@
+release: dotnet ef database update
+web: dotnet RunTribe.Api.dll
+
