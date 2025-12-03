@@ -41,7 +41,10 @@ export default function Login() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password. Please try again.");
+        console.error("Sign in error:", result.error);
+        setError(result.error === "CredentialsSignin" 
+          ? "Invalid email or password. Please try again."
+          : `Sign in failed: ${result.error}`);
         setLoading(false);
       } else if (result?.ok) {
         // Wait for session to be established, then redirect
@@ -49,20 +52,41 @@ export default function Login() {
         
         // Poll for session to be available
         let attempts = 0;
-        const maxAttempts = 20; // 2 seconds max wait
+        const maxAttempts = 30; // 3 seconds max wait
         
         const checkSession = setInterval(async () => {
           attempts++;
-          const currentSession = await getSession();
-          
-          if (currentSession || attempts >= maxAttempts) {
-            clearInterval(checkSession);
-            router.push("/dashboard");
+          try {
+            const currentSession = await getSession();
+            
+            if (currentSession) {
+              clearInterval(checkSession);
+              console.log("Session established, redirecting to dashboard");
+              router.push("/dashboard");
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkSession);
+              console.warn("Session check timeout, redirecting anyway");
+              // Redirect anyway - session might be established but not detected
+              router.push("/dashboard");
+            }
+          } catch (sessionError) {
+            console.error("Error checking session:", sessionError);
+            if (attempts >= maxAttempts) {
+              clearInterval(checkSession);
+              setError("Session check failed. Please try logging in again.");
+              setLoading(false);
+            }
           }
         }, 100);
+      } else {
+        // Unexpected result
+        console.error("Unexpected sign in result:", result);
+        setError("An unexpected error occurred. Please try again.");
+        setLoading(false);
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      console.error("Login error:", err);
+      setError(`An error occurred: ${err.message || "Please try again."}`);
       setLoading(false);
     }
   };

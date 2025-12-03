@@ -15,7 +15,16 @@ const handler = NextAuth({
         try {
           // Call your .NET backend API for authentication
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071';
-          const response = await fetch(`${apiUrl}/api/auth/login`, {
+          
+          if (!apiUrl) {
+            console.error("[NextAuth] NEXT_PUBLIC_API_URL is not set");
+            return null;
+          }
+          
+          const loginUrl = `${apiUrl}/api/auth/login`;
+          console.log("[NextAuth] Attempting login to:", loginUrl);
+          
+          const response = await fetch(loginUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -26,8 +35,11 @@ const handler = NextAuth({
             }),
           });
 
+          console.log("[NextAuth] Login response status:", response.status);
+
           if (response.ok) {
             const user = await response.json();
+            console.log("[NextAuth] Login successful for user:", user.email);
             return {
               id: user.id,
               email: user.email,
@@ -35,12 +47,24 @@ const handler = NextAuth({
             };
           }
           
+          // Log error details
+          const errorText = await response.text();
+          console.error("[NextAuth] Login failed:", response.status, errorText);
+          
           // If credentials don't match, return null
           return null;
         } catch (error) {
-          console.error("Auth error:", error);
-          // Fallback to test credentials for development
-          if (credentials.email === "test@example.com" && credentials.password === "password") {
+          console.error("[NextAuth] Auth error:", error);
+          console.error("[NextAuth] Error details:", {
+            message: error.message,
+            stack: error.stack,
+            apiUrl: process.env.NEXT_PUBLIC_API_URL
+          });
+          
+          // Fallback to test credentials for development only
+          if (process.env.NODE_ENV === 'development' && 
+              credentials.email === "test@example.com" && 
+              credentials.password === "password") {
             return {
               id: "1",
               email: credentials.email,
