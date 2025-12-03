@@ -180,7 +180,7 @@ builder.Services.AddCors(options =>
         vercelOrigins.Add("https://*.vercel.app");
         vercelOrigins.Add("http://*.vercel.app");
         
-        // Use SetIsOriginAllowed to allow Vercel preview domains
+        // Use SetIsOriginAllowed to allow Vercel preview domains and custom domains
         policy.SetIsOriginAllowed(origin =>
         {
             // Allow exact matches from config
@@ -189,6 +189,11 @@ builder.Services.AddCors(options =>
             
             // Allow all Vercel preview domains (*.vercel.app)
             if (origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            // Allow custom domain variations (runtribes.site, runtribes.app, etc.)
+            if (origin.Contains("runtribes.site", StringComparison.OrdinalIgnoreCase) ||
+                origin.Contains("runtribes.app", StringComparison.OrdinalIgnoreCase))
                 return true;
             
             // Allow localhost for development
