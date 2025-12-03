@@ -16,9 +16,13 @@ export default function Login() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
+      // Use window.location for a hard redirect to ensure it works in production
+      // Check for callbackUrl in query params, otherwise default to dashboard
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackUrl = urlParams.get('callbackUrl') || "/dashboard";
+      window.location.href = callbackUrl;
     }
-  }, [status, router]);
+  }, [status]);
 
   const handleChange = (e) => {
     setFormData({
@@ -62,12 +66,18 @@ export default function Login() {
             if (currentSession) {
               clearInterval(checkSession);
               console.log("Session established, redirecting to dashboard");
-              router.push("/dashboard");
+              // Use window.location for a hard redirect to ensure it works
+              // Check for callbackUrl in query params, otherwise default to dashboard
+              const urlParams = new URLSearchParams(window.location.search);
+              const callbackUrl = urlParams.get('callbackUrl') || "/dashboard";
+              window.location.href = callbackUrl;
             } else if (attempts >= maxAttempts) {
               clearInterval(checkSession);
               console.warn("Session check timeout, redirecting anyway");
               // Redirect anyway - session might be established but not detected
-              router.push("/dashboard");
+              const urlParams = new URLSearchParams(window.location.search);
+              const callbackUrl = urlParams.get('callbackUrl') || "/dashboard";
+              window.location.href = callbackUrl;
             }
           } catch (sessionError) {
             console.error("Error checking session:", sessionError);

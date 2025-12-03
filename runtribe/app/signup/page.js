@@ -24,9 +24,10 @@ export default function Signup() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
+      // Use window.location for a hard redirect to ensure it works in production
+      window.location.href = "/dashboard";
     }
-  }, [status, router]);
+  }, [status]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -109,7 +110,8 @@ export default function Signup() {
           
           if (currentSession || attempts >= maxAttempts) {
             clearInterval(checkSession);
-            router.push("/dashboard");
+            // Use window.location for a hard redirect to ensure it works
+            window.location.href = "/dashboard";
           }
         }, 100);
       }
