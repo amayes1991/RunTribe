@@ -1,9 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { signIn, useSession, getSession } from "next-auth/react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -38,18 +37,32 @@ export default function Login() {
         email: formData.email,
         password: formData.password,
         redirect: false,
+        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
         setError("Invalid email or password. Please try again.");
-      } else {
-        // NextAuth will handle the redirect automatically
-        // But we can also force it to dashboard
-        router.push("/dashboard");
+        setLoading(false);
+      } else if (result?.ok) {
+        // Wait for session to be established, then redirect
+        router.refresh();
+        
+        // Poll for session to be available
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds max wait
+        
+        const checkSession = setInterval(async () => {
+          attempts++;
+          const currentSession = await getSession();
+          
+          if (currentSession || attempts >= maxAttempts) {
+            clearInterval(checkSession);
+            router.push("/dashboard");
+          }
+        }, 100);
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

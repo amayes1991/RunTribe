@@ -1,9 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { signIn, useSession, getSession } from "next-auth/react";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -81,6 +80,7 @@ export default function Signup() {
       if (!signupResponse.ok) {
         const errorData = await signupResponse.text();
         setError(errorData || "Failed to create account");
+        setLoading(false);
         return;
       }
       
@@ -89,12 +89,29 @@ export default function Signup() {
         email: formData.email,
         password: formData.password,
         redirect: false,
+        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
         setError("Account created but login failed. Please try logging in.");
-      } else {
-        router.push("/dashboard");
+        setLoading(false);
+      } else if (result?.ok) {
+        // Wait for session to be established, then redirect
+        router.refresh();
+        
+        // Poll for session to be available
+        let attempts = 0;
+        const maxAttempts = 20; // 2 seconds max wait
+        
+        const checkSession = setInterval(async () => {
+          attempts++;
+          const currentSession = await getSession();
+          
+          if (currentSession || attempts >= maxAttempts) {
+            clearInterval(checkSession);
+            router.push("/dashboard");
+          }
+        }, 100);
       }
     } catch (err) {
       setError("An error occurred during signup. Please try again.");
