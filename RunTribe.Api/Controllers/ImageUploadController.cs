@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
+using RunTribe.Api.Services;
 
 namespace RunTribe.Api.Controllers;
 
@@ -8,10 +9,37 @@ namespace RunTribe.Api.Controllers;
 public class ImageUploadController : ControllerBase
 {
     private readonly IWebHostEnvironment _environment;
+    private readonly SupabaseStorageService? _supabaseStorage;
+    private readonly IConfiguration _configuration;
+    private readonly bool _useSupabase;
 
-    public ImageUploadController(IWebHostEnvironment environment)
+    public ImageUploadController(
+        IWebHostEnvironment environment,
+        IConfiguration configuration,
+        IServiceProvider serviceProvider)
     {
         _environment = environment;
+        _configuration = configuration;
+        
+        // Check if Supabase is configured
+        var supabaseUrl = _configuration["Supabase:Url"];
+        var supabaseKey = _configuration["Supabase:ServiceKey"] ?? _configuration["Supabase:AnonKey"];
+        _useSupabase = !string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey);
+
+        // Only initialize Supabase if configured
+        if (_useSupabase)
+        {
+            try
+            {
+                _supabaseStorage = new SupabaseStorageService(configuration);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to initialize Supabase Storage: {ex.Message}");
+                Console.WriteLine("Falling back to local file storage.");
+                _useSupabase = false;
+            }
+        }
     }
 
     [HttpGet("test")]
@@ -61,39 +89,72 @@ public class ImageUploadController : ControllerBase
                 return BadRequest("File size too large. Maximum size is 5MB.");
             }
 
-            // Use a simple approach - save to current directory first
-            var currentDir = Directory.GetCurrentDirectory();
-            var uploadsDir = Path.Combine(currentDir, "uploads", type);
-            
-            Console.WriteLine($"Current directory: {currentDir}");
-            Console.WriteLine($"Uploads directory: {uploadsDir}");
-
-            // Create directory if it doesn't exist
-            if (!Directory.Exists(uploadsDir))
-            {
-                Directory.CreateDirectory(uploadsDir);
-                Console.WriteLine($"Created directory: {uploadsDir}");
-            }
-
             // Generate unique filename
             var fileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(uploadsDir, fileName);
-            
-            Console.WriteLine($"Saving file to: {filePath}");
+            string imageUrl;
+            string fullImageUrl;
 
-            // Save file
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            if (_useSupabase && _supabaseStorage != null)
             {
-                await file.CopyToAsync(stream);
+                // Upload to Supabase Storage
+                Console.WriteLine("Uploading to Supabase Storage...");
+                
+                using (var stream = file.OpenReadStream())
+                {
+                    fullImageUrl = await _supabaseStorage.UploadImageAsync(stream, fileName, type);
+                }
+                
+                // For Supabase, the fullImageUrl is the public URL, use it as both
+                imageUrl = fullImageUrl;
+                
+                Console.WriteLine($"File uploaded to Supabase: {fullImageUrl}");
             }
+            else
+            {
+                // Fallback to local file storage
+                Console.WriteLine("Using local file storage (Supabase not configured)");
+                
+                var currentDir = Directory.GetCurrentDirectory();
+                var uploadsDir = Path.Combine(currentDir, "uploads", type);
+                
+                Console.WriteLine($"Current directory: {currentDir}");
+                Console.WriteLine($"Uploads directory: {uploadsDir}");
 
-            Console.WriteLine($"File saved successfully: {filePath}");
+                // Create directory if it doesn't exist
+                if (!Directory.Exists(uploadsDir))
+                {
+                    Directory.CreateDirectory(uploadsDir);
+                    Console.WriteLine($"Created directory: {uploadsDir}");
+                }
 
-            // Return the URL (relative to the uploads directory)
-            var imageUrl = $"/uploads/{type}/{fileName}";
-            Console.WriteLine($"Returning image URL: {imageUrl}");
+                var filePath = Path.Combine(uploadsDir, fileName);
+                
+                Console.WriteLine($"Saving file to: {filePath}");
+
+                // Save file
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"File saved successfully: {filePath}");
+
+                // Get the base URL from the request
+                var request = HttpContext.Request;
+                var baseUrl = $"{request.Scheme}://{request.Host}";
+                
+                // Return the full URL so it works in production
+                imageUrl = $"/uploads/{type}/{fileName}";
+                fullImageUrl = $"{baseUrl}{imageUrl}";
+                
+                Console.WriteLine($"Returning image URL: {fullImageUrl}");
+            }
             
-            return Ok(new { imageUrl });
+            // Return both relative and full URL for compatibility
+            return Ok(new { 
+                imageUrl = imageUrl,  // Relative URL (for getImageUrl utility) or full URL if Supabase
+                fullImageUrl = fullImageUrl  // Full URL (for direct use)
+            });
         }
         catch (Exception ex)
         {
