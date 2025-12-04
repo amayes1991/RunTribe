@@ -1,5 +1,6 @@
 using Supabase;
 using Supabase.Storage;
+using System.IO;
 
 namespace RunTribe.Api.Services;
 
@@ -44,7 +45,7 @@ public class SupabaseStorageService
                 
                 var result = await _supabase.Storage
                     .From(_bucketName)
-                    .Upload(fileBytes, filePath, new FileOptions
+                    .Upload(fileBytes, filePath, new Supabase.Storage.FileOptions
                     {
                         CacheControl = "3600",
                         Upsert = true
@@ -72,7 +73,7 @@ public class SupabaseStorageService
         {
             await _supabase.Storage
                 .From(_bucketName)
-                .Remove(new[] { filePath });
+                .Remove(filePath);
 
             return true;
         }
@@ -88,23 +89,22 @@ public class SupabaseStorageService
         try
         {
             var buckets = await _supabase.Storage.ListBuckets();
-            var bucketExists = buckets.Any(b => b.Name == _bucketName);
-
-            if (!bucketExists)
+            if (buckets != null)
             {
-                await _supabase.Storage.CreateBucket(_bucketName, new BucketOptions
+                var bucketExists = buckets.Any(b => b.Name == _bucketName);
+
+                if (!bucketExists)
                 {
-                    Public = true, // Make bucket public so images are accessible
-                    FileSizeLimit = 5242880, // 5MB
-                    AllowedMimeTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" }
-                });
-                
-                Console.WriteLine($"Created Supabase bucket: {_bucketName}");
+                    // Note: Bucket creation might need to be done manually in Supabase dashboard
+                    // or via a different API. For now, we'll just log a warning.
+                    Console.WriteLine($"Warning: Bucket '{_bucketName}' does not exist. Please create it manually in Supabase dashboard.");
+                    Console.WriteLine($"Bucket should be public and allow: image/jpeg, image/png, image/gif, image/webp");
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error ensuring bucket exists: {ex.Message}");
+            Console.WriteLine($"Error checking bucket existence: {ex.Message}");
             // Continue anyway - bucket might already exist or need manual creation
         }
     }
