@@ -30,8 +30,6 @@ export default function MyRuns() {
     pace: "",
     location: "",
     routeName: "",
-    weather: "",
-    temperature: "",
     averageHeartRate: "",
     maxHeartRate: "",
     caloriesBurned: "",
@@ -53,8 +51,6 @@ export default function MyRuns() {
     pace: "",
     location: "",
     routeName: "",
-    weather: "",
-    temperature: "",
     averageHeartRate: "",
     maxHeartRate: "",
     caloriesBurned: "",
@@ -171,8 +167,6 @@ export default function MyRuns() {
       pace: run.pace || "",
       location: run.location || "",
       routeName: run.routeName || "",
-      weather: run.weather || "",
-      temperature: run.temperature || "",
       averageHeartRate: run.averageHeartRate?.toString() || "",
       maxHeartRate: run.maxHeartRate?.toString() || "",
       caloriesBurned: run.caloriesBurned?.toString() || "",
@@ -250,8 +244,6 @@ export default function MyRuns() {
         location: editFormData.location || "",
         routeName: editFormData.routeName || "",
         imageUrl: editFormData.imageUrl || "",
-        weather: editFormData.weather || "",
-        temperature: editFormData.temperature || "",
         averageHeartRate: editFormData.averageHeartRate ? parseInt(editFormData.averageHeartRate) : null,
         maxHeartRate: editFormData.maxHeartRate ? parseInt(editFormData.maxHeartRate) : null,
         caloriesBurned: editFormData.caloriesBurned ? parseFloat(editFormData.caloriesBurned) : null,
@@ -394,8 +386,6 @@ export default function MyRuns() {
         pace: newRun.pace?.trim() || null,
         location: newRun.location?.trim() || null,
         routeName: newRun.routeName?.trim() || null,
-        weather: newRun.weather?.trim() || null,
-        temperature: newRun.temperature?.trim() || null,
         averageHeartRate: newRun.averageHeartRate ? parseInt(newRun.averageHeartRate) : null,
         maxHeartRate: newRun.maxHeartRate ? parseInt(newRun.maxHeartRate) : null,
         caloriesBurned: newRun.caloriesBurned ? parseFloat(newRun.caloriesBurned) : null,
@@ -431,8 +421,6 @@ export default function MyRuns() {
           pace: "",
           location: "",
           routeName: "",
-          weather: "",
-          temperature: "",
           averageHeartRate: "",
           maxHeartRate: "",
           caloriesBurned: "",
@@ -825,28 +813,6 @@ export default function MyRuns() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-300">Weather</label>
-                      <input
-                        type="text"
-                        value={newRun.weather}
-                        onChange={(e) => setNewRun({...newRun, weather: e.target.value})}
-                        className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
-                        placeholder="Sunny, Cloudy, Rainy"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300">Temperature</label>
-                      <input
-                        type="text"
-                        value={newRun.temperature}
-                        onChange={(e) => setNewRun({...newRun, temperature: e.target.value})}
-                        className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
-                        placeholder="72°F"
-                      />
-                    </div>
-                    
-                    <div>
                       <label className="block text-sm font-medium text-gray-300">Tags</label>
                       <input
                         type="text"
@@ -1030,28 +996,6 @@ export default function MyRuns() {
                         onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
                         className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
                         placeholder="Central Park, NYC"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300">Weather</label>
-                      <input
-                        type="text"
-                        value={editFormData.weather}
-                        onChange={(e) => setEditFormData({...editFormData, weather: e.target.value})}
-                        className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
-                        placeholder="Sunny, Cloudy, Rainy"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300">Temperature</label>
-                      <input
-                        type="text"
-                        value={editFormData.temperature}
-                        onChange={(e) => setEditFormData({...editFormData, temperature: e.target.value})}
-                        className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
-                        placeholder="72°F"
                       />
                     </div>
                     
