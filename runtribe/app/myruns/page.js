@@ -332,25 +332,82 @@ export default function MyRuns() {
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071';
-      const userEmail = session.user.email;
+      const userEmail = session?.user?.email;
       
-      // Parse duration from HH:MM:SS format to total seconds
-      const durationParts = newRun.duration.split(':').map(Number);
-      const durationInSeconds = (durationParts[0] || 0) * 3600 + (durationParts[1] || 0) * 60 + (durationParts[2] || 0);
+      if (!userEmail) {
+        console.error('User email not found in session');
+        alert('Please log in to log a run');
+        return;
+      }
+
+      // Validate required fields
+      if (!newRun.title || !newRun.title.trim()) {
+        alert('Please enter a title for your run');
+        return;
+      }
+
+      if (!newRun.distance || isNaN(parseFloat(newRun.distance))) {
+        alert('Please enter a valid distance');
+        return;
+      }
+
+      if (!newRun.duration || !newRun.duration.trim()) {
+        alert('Please enter a duration (e.g., 30:00 or 1:30:00)');
+        return;
+      }
+
+      // Parse duration from HH:MM:SS or MM:SS format to total seconds
+      let durationInSeconds = 0;
+      try {
+        const durationParts = newRun.duration.split(':').map(Number);
+        if (durationParts.length === 2) {
+          // MM:SS format
+          durationInSeconds = (durationParts[0] || 0) * 60 + (durationParts[1] || 0);
+        } else if (durationParts.length === 3) {
+          // HH:MM:SS format
+          durationInSeconds = (durationParts[0] || 0) * 3600 + (durationParts[1] || 0) * 60 + (durationParts[2] || 0);
+        } else {
+          throw new Error('Invalid duration format');
+        }
+      } catch (error) {
+        alert('Please enter duration in format MM:SS or HH:MM:SS (e.g., 30:00 or 1:30:00)');
+        return;
+      }
+
+      if (durationInSeconds <= 0) {
+        alert('Duration must be greater than 0');
+        return;
+      }
+
+      const distance = parseFloat(newRun.distance);
+      if (distance <= 0) {
+        alert('Distance must be greater than 0');
+        return;
+      }
       
       const runData = {
-        ...newRun,
+        title: newRun.title.trim(),
+        notes: newRun.notes?.trim() || null,
+        runDate: newRun.runDate || new Date().toISOString(),
         duration: durationInSeconds,
-        distance: parseFloat(newRun.distance),
+        distance: distance,
+        pace: newRun.pace?.trim() || null,
+        location: newRun.location?.trim() || null,
+        routeName: newRun.routeName?.trim() || null,
+        weather: newRun.weather?.trim() || null,
+        temperature: newRun.temperature?.trim() || null,
         averageHeartRate: newRun.averageHeartRate ? parseInt(newRun.averageHeartRate) : null,
         maxHeartRate: newRun.maxHeartRate ? parseInt(newRun.maxHeartRate) : null,
         caloriesBurned: newRun.caloriesBurned ? parseFloat(newRun.caloriesBurned) : null,
+        tags: newRun.tags?.trim() || null,
         feelingRating: newRun.feelingRating ? parseInt(newRun.feelingRating) : null,
-        shoeId: newRun.shoeId || null
+        isRace: newRun.isRace || false,
+        raceName: newRun.raceName?.trim() || null,
+        raceResult: newRun.raceResult?.trim() || null,
+        shoeId: newRun.shoeId && newRun.shoeId !== "" ? newRun.shoeId : null
       };
       
       console.log('Creating run with data:', runData);
-      console.log('Selected shoe ID:', newRun.shoeId);
       console.log('User email:', userEmail);
       
       const response = await fetch(`${apiUrl}/api/individualruns?userEmail=${encodeURIComponent(userEmail)}`, {
@@ -388,9 +445,15 @@ export default function MyRuns() {
         });
         fetchRuns();
         fetchStats();
+      } else {
+        // Handle error response
+        const errorData = await response.text();
+        console.error('Error response:', response.status, errorData);
+        alert(`Failed to log run: ${errorData || response.statusText}`);
       }
     } catch (error) {
       console.error('Error logging run:', error);
+      alert(`Error logging run: ${error.message || 'Please try again'}`);
     }
   };
 

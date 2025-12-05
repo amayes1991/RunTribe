@@ -142,19 +142,46 @@ public class IndividualRunsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<object>> CreateRun([FromBody] CreateIndividualRunRequest request, [FromQuery] string userEmail)
     {
-        if (string.IsNullOrEmpty(userEmail))
+        try
         {
-            return BadRequest("User email is required");
-        }
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                Console.WriteLine("[IndividualRuns] CreateRun: User email is required");
+                return BadRequest("User email is required");
+            }
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-        if (user == null)
-        {
-            return NotFound("User not found");
-        }
+            Console.WriteLine($"[IndividualRuns] CreateRun: Attempting to create run for user {userEmail}");
+            Console.WriteLine($"[IndividualRuns] CreateRun: Request data - Title: {request.Title}, Distance: {request.Distance}, Duration: {request.Duration}");
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null)
+            {
+                Console.WriteLine($"[IndividualRuns] CreateRun: User not found: {userEmail}");
+                return NotFound("User not found");
+            }
+
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                Console.WriteLine("[IndividualRuns] CreateRun: Title is required");
+                return BadRequest("Title is required");
+            }
+
+            if (request.Distance <= 0)
+            {
+                Console.WriteLine($"[IndividualRuns] CreateRun: Invalid distance: {request.Distance}");
+                return BadRequest("Distance must be greater than 0");
+            }
+
+            if (request.Duration <= 0)
+            {
+                Console.WriteLine($"[IndividualRuns] CreateRun: Invalid duration: {request.Duration}");
+                return BadRequest("Duration must be greater than 0");
+            }
 
         var run = new IndividualRun
         {
+            Id = Guid.NewGuid(),
             Title = request.Title,
             Notes = request.Notes,
             RunDate = request.RunDate,
@@ -180,41 +207,50 @@ public class IndividualRunsController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.IndividualRuns.Add(run);
-        await _context.SaveChangesAsync();
+            _context.IndividualRuns.Add(run);
+            await _context.SaveChangesAsync();
 
-        // Update shoe mileage if a shoe was selected
-        if (request.ShoeId.HasValue)
-        {
-            await UpdateShoeMileage(request.ShoeId.Value, request.Distance);
+            Console.WriteLine($"[IndividualRuns] CreateRun: Run created successfully with ID: {run.Id}");
+
+            // Update shoe mileage if a shoe was selected
+            if (request.ShoeId.HasValue)
+            {
+                await UpdateShoeMileage(request.ShoeId.Value, request.Distance);
+            }
+
+            var result = new
+            {
+                run.Id,
+                run.Title,
+                run.Notes,
+                run.RunDate,
+                run.Duration,
+                run.Distance,
+                run.Pace,
+                run.Location,
+                run.RouteName,
+                run.ImageUrl,
+                run.Weather,
+                run.Temperature,
+                run.AverageHeartRate,
+                run.MaxHeartRate,
+                run.CaloriesBurned,
+                run.Tags,
+                run.FeelingRating,
+                run.IsRace,
+                run.RaceName,
+                run.RaceResult,
+                run.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetRun), new { id = run.Id }, result);
         }
-
-        var result = new
+        catch (Exception ex)
         {
-            run.Id,
-            run.Title,
-            run.Notes,
-            run.RunDate,
-            run.Duration,
-            run.Distance,
-            run.Pace,
-            run.Location,
-            run.RouteName,
-            run.ImageUrl,
-            run.Weather,
-            run.Temperature,
-            run.AverageHeartRate,
-            run.MaxHeartRate,
-            run.CaloriesBurned,
-            run.Tags,
-            run.FeelingRating,
-            run.IsRace,
-            run.RaceName,
-            run.RaceResult,
-            run.CreatedAt
-        };
-
-        return CreatedAtAction(nameof(GetRun), new { id = run.Id }, result);
+            Console.WriteLine($"[IndividualRuns] CreateRun: Error - {ex.Message}");
+            Console.WriteLine($"[IndividualRuns] CreateRun: Stack trace - {ex.StackTrace}");
+            return StatusCode(500, $"An error occurred while creating the run: {ex.Message}");
+        }
     }
 
     // PUT: api/individualruns/{id}
