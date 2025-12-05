@@ -179,12 +179,17 @@ public class IndividualRunsController : ControllerBase
                 return BadRequest("Duration must be greater than 0");
             }
 
+        // Ensure RunDate is UTC for PostgreSQL compatibility
+        var runDateUtc = request.RunDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(request.RunDate, DateTimeKind.Utc)
+            : request.RunDate.ToUniversalTime();
+
         var run = new IndividualRun
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
             Notes = request.Notes,
-            RunDate = request.RunDate,
+            RunDate = runDateUtc,
             Duration = request.Duration,
             Distance = request.Distance,
             Pace = request.Pace,
@@ -277,9 +282,14 @@ public class IndividualRunsController : ControllerBase
             return Forbid();
         }
 
+        // Ensure RunDate is UTC for PostgreSQL compatibility
+        var runDateUtc = request.RunDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(request.RunDate, DateTimeKind.Utc)
+            : request.RunDate.ToUniversalTime();
+
         run.Title = request.Title;
         run.Notes = request.Notes;
-        run.RunDate = request.RunDate;
+        run.RunDate = runDateUtc;
         run.Duration = request.Duration;
         run.Distance = request.Distance;
         run.Pace = request.Pace;

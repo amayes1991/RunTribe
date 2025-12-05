@@ -175,13 +175,22 @@ public class GroupRunsController : ControllerBase
             return StatusCode(403, "Only group owners can schedule runs");
         }
 
+        // Ensure RunDateTime is UTC for PostgreSQL compatibility (if provided)
+        DateTime? runDateTimeUtc = null;
+        if (request.RunDateTime.HasValue)
+        {
+            runDateTimeUtc = request.RunDateTime.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.RunDateTime.Value, DateTimeKind.Utc)
+                : request.RunDateTime.Value.ToUniversalTime();
+        }
+
         var groupRun = new GroupRun
         {
             Title = request.Title,
             Content = request.Content,
             AuthorId = user.Id,
             GroupId = request.GroupId,
-            RunDateTime = request.RunDateTime,
+            RunDateTime = runDateTimeUtc,
             RunLocation = request.RunLocation,
             Pace = request.Pace,
             Distance = request.Distance,
@@ -248,7 +257,17 @@ public class GroupRunsController : ControllerBase
 
         groupRun.Title = request.Title;
         groupRun.Content = request.Content;
-        groupRun.RunDateTime = request.RunDateTime;
+        // Ensure RunDateTime is UTC for PostgreSQL compatibility (if provided)
+        if (request.RunDateTime.HasValue)
+        {
+            groupRun.RunDateTime = request.RunDateTime.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.RunDateTime.Value, DateTimeKind.Utc)
+                : request.RunDateTime.Value.ToUniversalTime();
+        }
+        else
+        {
+            groupRun.RunDateTime = null;
+        }
         groupRun.RunLocation = request.RunLocation;
         groupRun.Pace = request.Pace;
         groupRun.Distance = request.Distance;

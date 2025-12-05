@@ -135,7 +135,15 @@ namespace RunTribe.Api.Controllers
             if (string.IsNullOrWhiteSpace(request.Title))
                 return BadRequest("Challenge title is required");
 
-            if (request.StartDate >= request.EndDate)
+            // Ensure DateTime values are UTC for PostgreSQL compatibility
+            var startDateUtc = request.StartDate.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.StartDate, DateTimeKind.Utc)
+                : request.StartDate.ToUniversalTime();
+            var endDateUtc = request.EndDate.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.EndDate, DateTimeKind.Utc)
+                : request.EndDate.ToUniversalTime();
+
+            if (startDateUtc >= endDateUtc)
                 return BadRequest("Start date must be before end date");
 
             var challenge = new RunChallenge
@@ -145,8 +153,8 @@ namespace RunTribe.Api.Controllers
                 Description = request.Description?.Trim() ?? "",
                 Type = request.Type,
                 RequiredDistancePerDay = request.RequiredDistancePerDay,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
+                StartDate = startDateUtc,
+                EndDate = endDateUtc,
                 IsPublic = request.IsPublic,
                 CreatedByUserId = user.Id,
                 CreatedAt = DateTime.UtcNow,
