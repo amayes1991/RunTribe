@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RunTribe.Api.DbContext;
 using RunTribe.Api.Models;
 using System.ComponentModel.DataAnnotations;
+using BCrypt.Net;
 
 namespace RunTribe.Api.Controllers;
 
@@ -46,8 +47,6 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // TODO: Implement proper password hashing and verification
-            // For now, we'll do a simple check
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
@@ -56,8 +55,12 @@ public class AuthController : ControllerBase
                 return Unauthorized("Invalid email or password");
             }
 
-            // TODO: Add proper password verification here
-            // For development, we'll accept any password for existing users
+            // Verify the password
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
             return Ok(new
             {
                 id = user.Id,
@@ -83,17 +86,18 @@ public class AuthController : ControllerBase
                 return BadRequest("User with this email already exists");
             }
 
+            // Hash the password before storing
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
             // Create new user
             var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = request.Email,
                 Name = request.Name,
+                PasswordHash = passwordHash,
                 CreatedAt = DateTime.UtcNow
             };
-
-            // TODO: Hash the password before storing
-            // For now, we'll store it as-is (NOT recommended for production)
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
