@@ -210,6 +210,99 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Ensure database is migrated (with error handling for manually created columns)
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        // Check if PasswordHash column exists and has correct properties
+        try
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+            
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
+                FROM information_schema.columns
+                WHERE table_name = 'Users' AND column_name = 'PasswordHash';
+            ";
+            
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var dataType = reader.GetString(1);
+                var maxLength = reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2);
+                var isNullable = reader.GetString(3).ToUpper() == "YES";
+                var defaultValue = reader.IsDBNull(4) ? null : reader.GetString(4);
+                
+                Console.WriteLine($"[DB Check] PasswordHash column exists: type={dataType}, maxLength={maxLength}, nullable={isNullable}, default={defaultValue}");
+                
+                // If column exists but is nullable or wrong type, try to fix it
+                if (isNullable || dataType.ToLower() != "character varying" || maxLength != 255)
+                {
+                    Console.WriteLine("[DB Check] PasswordHash column needs to be fixed. Attempting to alter...");
+                    await reader.CloseAsync();
+                    
+                    // Alter column to match expected schema
+                    using var alterCommand = connection.CreateCommand();
+                    alterCommand.CommandText = @"
+                        ALTER TABLE ""Users""
+                        ALTER COLUMN ""PasswordHash"" TYPE character varying(255),
+                        ALTER COLUMN ""PasswordHash"" SET NOT NULL,
+                        ALTER COLUMN ""PasswordHash"" SET DEFAULT '';
+                    ";
+                    
+                    try
+                    {
+                        await alterCommand.ExecuteNonQueryAsync();
+                        Console.WriteLine("[DB Check] PasswordHash column fixed successfully");
+                    }
+                    catch (Exception alterEx)
+                    {
+                        Console.WriteLine($"[DB Check] Warning: Could not auto-fix PasswordHash column: {alterEx.Message}");
+                        Console.WriteLine("[DB Check] You may need to manually fix the column or drop and recreate it");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("[DB Check] PasswordHash column does not exist. Migrations should create it.");
+            }
+            
+            await connection.CloseAsync();
+        }
+        catch (Exception checkEx)
+        {
+            // If it's not PostgreSQL, skip the check (SQLite doesn't have information_schema the same way)
+            var providerName = dbContext.Database.ProviderName ?? "";
+            if (!providerName.Contains("PostgreSQL") && !providerName.Contains("Npgsql"))
+            {
+                Console.WriteLine("[DB Check] Skipping column check for non-PostgreSQL database");
+            }
+            else
+            {
+                Console.WriteLine($"[DB Check] Could not check PasswordHash column: {checkEx.Message}");
+            }
+        }
+        
+        // Try to apply pending migrations
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("[DB] Database migrations applied successfully");
+    }
+}
+catch (Exception migrationEx)
+{
+    Console.WriteLine($"[DB] Warning: Could not apply migrations automatically: {migrationEx.Message}");
+    if (migrationEx.InnerException != null)
+    {
+        Console.WriteLine($"[DB] Inner exception: {migrationEx.InnerException.Message}");
+    }
+    // Don't fail startup - let the app run and show better errors
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

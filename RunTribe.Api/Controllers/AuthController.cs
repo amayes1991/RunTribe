@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using RunTribe.Api.DbContext;
 using RunTribe.Api.Models;
 using System.ComponentModel.DataAnnotations;
-using BCrypt.Net;
 
 namespace RunTribe.Api.Controllers;
 
@@ -55,8 +54,8 @@ public class AuthController : ControllerBase
                 return Unauthorized("Invalid email or password");
             }
 
-            // Verify the password
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            // Verify the password (plain text comparison for portfolio project)
+            if (user.PasswordHash != request.Password)
             {
                 return Unauthorized("Invalid email or password");
             }
@@ -68,7 +67,7 @@ public class AuthController : ControllerBase
                 name = user.Name
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred during login");
         }
@@ -86,16 +85,14 @@ public class AuthController : ControllerBase
                 return BadRequest("User with this email already exists");
             }
 
-            // Hash the password before storing
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
+            // Store password in plain text (for portfolio project only)
             // Create new user
             var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = request.Email,
                 Name = request.Name,
-                PasswordHash = passwordHash,
+                PasswordHash = request.Password, // Store plain text password
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -109,6 +106,30 @@ public class AuthController : ControllerBase
                 name = user.Name
             });
         }
+        catch (DbUpdateException dbEx)
+        {
+            // Log the actual error for debugging
+            Console.WriteLine($"Registration DB error: {dbEx.Message}");
+            if (dbEx.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {dbEx.InnerException.Message}");
+                Console.WriteLine($"Inner stack trace: {dbEx.InnerException.StackTrace}");
+                
+                // Check for common database errors
+                var innerMessage = dbEx.InnerException.Message.ToLowerInvariant();
+                if (innerMessage.Contains("unique constraint") || innerMessage.Contains("duplicate key"))
+                {
+                    return BadRequest("A user with this email already exists");
+                }
+                if (innerMessage.Contains("foreign key") || innerMessage.Contains("constraint"))
+                {
+                    return StatusCode(500, "Database constraint violation. Please contact support.");
+                }
+                
+                return StatusCode(500, $"Database error: {dbEx.InnerException.Message}");
+            }
+            return StatusCode(500, $"Database error: {dbEx.Message}");
+        }
         catch (Exception ex)
         {
             // Log the actual error for debugging
@@ -117,6 +138,8 @@ public class AuthController : ControllerBase
             if (ex.InnerException != null)
             {
                 Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                Console.WriteLine($"Inner stack trace: {ex.InnerException.StackTrace}");
+                return StatusCode(500, $"An error occurred during registration: {ex.InnerException.Message}");
             }
             return StatusCode(500, $"An error occurred during registration: {ex.Message}");
         }
