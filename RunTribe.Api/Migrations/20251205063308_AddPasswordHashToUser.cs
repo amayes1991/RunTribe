@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace RunTribe.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPasswordHashToUser : Migration
+    public partial class AddpasswordhashToUser : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -60,7 +60,7 @@ namespace RunTribe.Api.Migrations
                 oldType: "uuid");
 
             migrationBuilder.AddColumn<string>(
-                name: "PasswordHash",
+                name: "passwordhash",
                 table: "Users",
                 type: "TEXT",
                 maxLength: 255,
@@ -1041,7 +1041,7 @@ namespace RunTribe.Api.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "PasswordHash",
+                name: "passwordhash",
                 table: "Users");
 
             migrationBuilder.AlterColumn<string>(

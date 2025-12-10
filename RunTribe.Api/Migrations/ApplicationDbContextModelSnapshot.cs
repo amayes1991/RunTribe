@@ -499,7 +499,7 @@ namespace RunTribe.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("passwordhash")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");

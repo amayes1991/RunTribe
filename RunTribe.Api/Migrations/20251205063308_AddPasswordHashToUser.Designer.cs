@@ -11,8 +11,8 @@ using RunTribe.Api.DbContext;
 namespace RunTribe.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251205063308_AddPasswordHashToUser")]
-    partial class AddPasswordHashToUser
+    [Migration("20251205063308_AddpasswordhashToUser")]
+    partial class AddpasswordhashToUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -502,7 +502,7 @@ namespace RunTribe.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("passwordhash")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");

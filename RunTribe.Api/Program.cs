@@ -217,7 +217,7 @@ try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
-        // Check if PasswordHash column exists and has correct properties
+        // Check if passwordhash column exists and has correct properties
         try
         {
             var connection = dbContext.Database.GetDbConnection();
@@ -227,7 +227,7 @@ try
             command.CommandText = @"
                 SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
                 FROM information_schema.columns
-                WHERE table_name = 'Users' AND column_name = 'PasswordHash';
+                WHERE table_name = 'Users' AND column_name = 'passwordhash';
             ";
             
             using var reader = await command.ExecuteReaderAsync();
@@ -238,38 +238,38 @@ try
                 var isNullable = reader.GetString(3).ToUpper() == "YES";
                 var defaultValue = reader.IsDBNull(4) ? null : reader.GetString(4);
                 
-                Console.WriteLine($"[DB Check] PasswordHash column exists: type={dataType}, maxLength={maxLength}, nullable={isNullable}, default={defaultValue}");
+                Console.WriteLine($"[DB Check] passwordhash column exists: type={dataType}, maxLength={maxLength}, nullable={isNullable}, default={defaultValue}");
                 
                 // If column exists but is nullable or wrong type, try to fix it
                 if (isNullable || dataType.ToLower() != "character varying" || maxLength != 255)
                 {
-                    Console.WriteLine("[DB Check] PasswordHash column needs to be fixed. Attempting to alter...");
+                    Console.WriteLine("[DB Check] passwordhash column needs to be fixed. Attempting to alter...");
                     await reader.CloseAsync();
                     
                     // Alter column to match expected schema
                     using var alterCommand = connection.CreateCommand();
                     alterCommand.CommandText = @"
                         ALTER TABLE ""Users""
-                        ALTER COLUMN ""PasswordHash"" TYPE character varying(255),
-                        ALTER COLUMN ""PasswordHash"" SET NOT NULL,
-                        ALTER COLUMN ""PasswordHash"" SET DEFAULT '';
+                        ALTER COLUMN ""passwordhash"" TYPE character varying(255),
+                        ALTER COLUMN ""passwordhash"" SET NOT NULL,
+                        ALTER COLUMN ""passwordhash"" SET DEFAULT '';
                     ";
                     
                     try
                     {
                         await alterCommand.ExecuteNonQueryAsync();
-                        Console.WriteLine("[DB Check] PasswordHash column fixed successfully");
+                        Console.WriteLine("[DB Check] passwordhash column fixed successfully");
                     }
                     catch (Exception alterEx)
                     {
-                        Console.WriteLine($"[DB Check] Warning: Could not auto-fix PasswordHash column: {alterEx.Message}");
+                        Console.WriteLine($"[DB Check] Warning: Could not auto-fix passwordhash column: {alterEx.Message}");
                         Console.WriteLine("[DB Check] You may need to manually fix the column or drop and recreate it");
                     }
                 }
             }
             else
             {
-                Console.WriteLine("[DB Check] PasswordHash column does not exist. Migrations should create it.");
+                Console.WriteLine("[DB Check] passwordhash column does not exist. Migrations should create it.");
             }
             
             await connection.CloseAsync();
@@ -284,7 +284,7 @@ try
             }
             else
             {
-                Console.WriteLine($"[DB Check] Could not check PasswordHash column: {checkEx.Message}");
+                Console.WriteLine($"[DB Check] Could not check passwordhash column: {checkEx.Message}");
             }
         }
         

@@ -55,7 +55,7 @@ public class AuthController : ControllerBase
             }
 
             // Verify the password (plain text comparison for portfolio project)
-            if (user.PasswordHash != request.Password)
+            if (user.passwordhash != request.Password)
             {
                 return Unauthorized("Invalid email or password");
             }
@@ -92,7 +92,7 @@ public class AuthController : ControllerBase
                 Id = Guid.NewGuid(),
                 Email = request.Email,
                 Name = request.Name,
-                PasswordHash = request.Password, // Store plain text password
+                passwordhash = request.Password, // Store plain text password
                 CreatedAt = DateTime.UtcNow
             };
 

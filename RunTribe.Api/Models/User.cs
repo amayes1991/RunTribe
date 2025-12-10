@@ -11,7 +11,7 @@ public class User
     public string Email { get; set; } = string.Empty;
     
     [Required]
-    public string PasswordHash { get; set; } = string.Empty;
+    public string passwordhash { get; set; } = string.Empty;
     
     public string? Name { get; set; }
     public string? ImageUrl { get; set; }
