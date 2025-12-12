@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Header from "../components/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getImageUrl } from "../utils/imageUtils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +32,9 @@ export default function Groups() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
+  const createImageInputRef = useRef(null);
+  const editImageInputRef = useRef(null);
+  const [imageCacheKey, setImageCacheKey] = useState(Date.now());
 
   // Fetch groups from backend
   useEffect(() => {
@@ -256,27 +259,75 @@ export default function Groups() {
   };
 
   const handleImageUpload = async (file) => {
+    if (!file) {
+      setError('No file selected');
+      return null;
+    }
+
+    // Validate file before upload
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Only JPG, PNG, and GIF files are allowed.');
+      return null;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError('File size too large. Maximum size is 5MB.');
+      return null;
+    }
+
     try {
       const formData = new FormData();
       formData.append('file', file);
+      
+      console.log('Uploading file:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified
+      });
       
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071';
       const response = await fetch(`${apiUrl}/api/imageupload/upload`, {
         method: 'POST',
         body: formData,
+        // Don't set Content-Type header - let browser set it with boundary for FormData
       });
+
+      console.log('Upload response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Upload successful, imageUrl:', data.imageUrl);
         return data.imageUrl;
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to upload image');
+        // Try to parse as JSON first, fallback to text if it fails
+        let errorMessage = 'Failed to upload image';
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData || errorMessage;
+          } else {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          }
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          errorMessage = response.statusText || `Server returned ${response.status}`;
+        }
+        
+        console.error('Upload failed:', errorMessage);
+        setError(errorMessage);
         return null;
       }
     } catch (err) {
-      setError('Error uploading image');
-      console.error('Error:', err);
+      const errorMsg = 'Error uploading image: ' + (err.message || 'Unknown error');
+      console.error('Upload exception:', err);
+      setError(errorMsg);
       return null;
     }
   };
@@ -512,6 +563,9 @@ export default function Groups() {
                     onClick={() => {
                       setShowEditModal(false);
                       setEditForm({ id: "", name: "", description: "", location: "", imageUrl: "" });
+                      if (editImageInputRef.current) {
+                        editImageInputRef.current.value = '';
+                      }
                     }}
                     className="text-gray-400 hover:text-white"
                   >
@@ -563,30 +617,65 @@ export default function Groups() {
                     <Label htmlFor="editGroupImage" className="block text-sm font-medium text-gray-300">Group Image</Label>
                     <Input
                       id="editGroupImage"
+                      ref={editImageInputRef}
                       type="file"
                       accept="image/*"
                       onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          console.log('Uploading image:', file.name);
-                          const imageUrl = await handleImageUpload(file);
-                          if (imageUrl) {
-                            console.log('Image uploaded successfully:', imageUrl);
-                            setEditForm({ ...editForm, imageUrl });
-                          } else {
-                            console.log('Image upload failed');
-                          }
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          return;
+                        }
+                        
+                        // Store file reference before async operation
+                        const selectedFile = file;
+                        console.log('File selected:', selectedFile.name, selectedFile.type, selectedFile.size);
+                        
+                        // Don't reset input yet - wait for upload to complete
+                        const imageUrl = await handleImageUpload(selectedFile);
+                        
+                        if (imageUrl) {
+                          console.log('Image uploaded successfully:', imageUrl);
+                          setEditForm((prev) => ({ ...prev, imageUrl }));
+                          setImageCacheKey(Date.now()); // Force image reload
+                        } else {
+                          console.log('Image upload failed - check error message');
+                        }
+                        
+                        // Reset file input after upload completes (success or failure)
+                        // This allows selecting the same file again
+                        if (editImageInputRef.current) {
+                          editImageInputRef.current.value = '';
                         }
                       }}
                       className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
                     />
                     {editForm.imageUrl && (
-                      <div className="mt-2">
+                      <div className="mt-2 relative inline-block">
                         <img 
-                          src={getImageUrl(editForm.imageUrl)} 
+                          key={`${editForm.imageUrl}-${imageCacheKey}`}
+                          src={`${getImageUrl(editForm.imageUrl)}?t=${imageCacheKey}`}
                           alt="Group preview" 
                           className="w-20 h-20 object-cover rounded-md"
+                          onError={(e) => {
+                            // Remove cache-busting and try again
+                            e.target.src = getImageUrl(editForm.imageUrl);
+                          }}
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditForm({ ...editForm, imageUrl: "" });
+                            if (editImageInputRef.current) {
+                              editImageInputRef.current.value = '';
+                            }
+                          }}
+                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 transition-colors"
+                          title="Remove image"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -597,6 +686,9 @@ export default function Groups() {
                       onClick={() => {
                         setShowEditModal(false);
                         setEditForm({ id: "", name: "", description: "", location: "", imageUrl: "" });
+                        if (editImageInputRef.current) {
+                          editImageInputRef.current.value = '';
+                        }
                       }}
                       className="px-4 py-2 border border-gray-700 bg-gray-800 text-gray-300 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white transition-colors"
                     >
@@ -626,6 +718,9 @@ export default function Groups() {
                     onClick={() => {
                       setShowCreateModal(false);
                       setCreateForm({ name: "", description: "", location: "", imageUrl: "" });
+                      if (createImageInputRef.current) {
+                        createImageInputRef.current.value = '';
+                      }
                     }}
                     className="text-gray-400 hover:text-white"
                   >
@@ -677,26 +772,62 @@ export default function Groups() {
                     <Label htmlFor="groupImage" className="block text-sm font-medium text-gray-300">Group Image</Label>
                     <Input
                       id="groupImage"
+                      ref={createImageInputRef}
                       type="file"
                       accept="image/*"
                       onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const imageUrl = await handleImageUpload(file);
-                          if (imageUrl) {
-                            setCreateForm({ ...createForm, imageUrl });
-                          }
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          return;
+                        }
+                        
+                        // Store file reference before async operation
+                        const selectedFile = file;
+                        console.log('File selected:', selectedFile.name, selectedFile.type, selectedFile.size);
+                        
+                        // Don't reset input yet - wait for upload to complete
+                        const imageUrl = await handleImageUpload(selectedFile);
+                        
+                        if (imageUrl) {
+                          setCreateForm((prev) => ({ ...prev, imageUrl }));
+                          setImageCacheKey(Date.now()); // Force image reload
+                        }
+                        
+                        // Reset file input after upload completes (success or failure)
+                        // This allows selecting the same file again
+                        if (createImageInputRef.current) {
+                          createImageInputRef.current.value = '';
                         }
                       }}
                       className="mt-1 block w-full border border-gray-700 bg-gray-800 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#66ff00] focus:border-transparent"
                     />
                     {createForm.imageUrl && (
-                      <div className="mt-2">
+                      <div className="mt-2 relative inline-block">
                         <img 
-                          src={getImageUrl(createForm.imageUrl)} 
+                          key={`${createForm.imageUrl}-${imageCacheKey}`}
+                          src={`${getImageUrl(createForm.imageUrl)}?t=${imageCacheKey}`}
                           alt="Group preview" 
                           className="w-20 h-20 object-cover rounded-md"
+                          onError={(e) => {
+                            // Remove cache-busting and try again
+                            e.target.src = getImageUrl(createForm.imageUrl);
+                          }}
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreateForm({ ...createForm, imageUrl: "" });
+                            if (createImageInputRef.current) {
+                              createImageInputRef.current.value = '';
+                            }
+                          }}
+                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 transition-colors"
+                          title="Remove image"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -707,6 +838,9 @@ export default function Groups() {
                       onClick={() => {
                         setShowCreateModal(false);
                         setCreateForm({ name: "", description: "", location: "", imageUrl: "" });
+                        if (createImageInputRef.current) {
+                          createImageInputRef.current.value = '';
+                        }
                       }}
                       className="px-4 py-2 border border-gray-700 bg-gray-800 text-gray-300 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white transition-colors"
                     >
