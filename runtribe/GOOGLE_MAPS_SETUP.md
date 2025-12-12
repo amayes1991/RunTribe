@@ -1,6 +1,6 @@
 # Google Maps API Integration Setup
 
-This guide will help you set up Google Maps API integration to display run locations on interactive maps in your RunTribe application.
+This guide will help you set up Google Maps API integration to display run locations on interactive maps in your RunTribes application.
 
 ## Prerequisites
 
@@ -119,7 +119,7 @@ For Google Maps API support:
 - [Google Cloud Console](https://console.cloud.google.com/)
 - [Google Maps Platform Support](https://developers.google.com/maps/support)
 
-For RunTribe-specific issues, check the main project documentation or create an issue in the project repository.
+For RunTribes-specific issues, check the main project documentation or create an issue in the project repository.
 
 
 

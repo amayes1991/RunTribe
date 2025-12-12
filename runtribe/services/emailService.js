@@ -29,18 +29,18 @@ export const emailService = {
       const msg = {
         to,
         from: config.fromEmail,
-        subject: 'Reset Your RunTribe Password',
+        subject: 'Reset Your RunTribes Password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a1a1a; color: white; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #66ff00; font-size: 28px; margin: 0;">RunTribe</h1>
+              <h1 style="color: #66ff00; font-size: 28px; margin: 0;">RunTribes</h1>
             </div>
             
             <div style="background-color: #2a2a2a; padding: 30px; border-radius: 10px; border: 1px solid #333;">
               <h2 style="color: white; margin-top: 0;">Hello ${userName}!</h2>
               
               <p style="color: #ccc; line-height: 1.6;">
-                We received a request to reset your password for your RunTribe account. 
+                We received a request to reset your password for your RunTribes account. 
                 If you didn't make this request, you can safely ignore this email.
               </p>
               
@@ -69,16 +69,16 @@ export const emailService = {
             </div>
             
             <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
-              <p>© 2024 RunTribe. All rights reserved.</p>
+              <p>© 2024 RunTribes. All rights reserved.</p>
             </div>
           </div>
         `,
         text: `
-          Reset Your RunTribe Password
+          Reset Your RunTribes Password
           
           Hello ${userName}!
           
-          We received a request to reset your password for your RunTribe account. 
+                We received a request to reset your password for your RunTribes account.
           If you didn't make this request, you can safely ignore this email.
           
           Click the link below to reset your password:
@@ -88,7 +88,7 @@ export const emailService = {
           
           If you have any questions, please contact our support team.
           
-          © 2024 RunTribe. All rights reserved.
+          © 2024 RunTribes. All rights reserved.
         `
       };
 
@@ -132,15 +132,15 @@ export const emailService = {
       const msg = {
         to,
         from: config.fromEmail,
-        subject: 'Welcome to RunTribe!',
+        subject: 'Welcome to RunTribes!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a1a1a; color: white; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #66ff00; font-size: 28px; margin: 0;">RunTribe</h1>
+              <h1 style="color: #66ff00; font-size: 28px; margin: 0;">RunTribes</h1>
             </div>
             
             <div style="background-color: #2a2a2a; padding: 30px; border-radius: 10px; border: 1px solid #333;">
-              <h2 style="color: white; margin-top: 0;">Welcome to RunTribe, ${userName}!</h2>
+              <h2 style="color: white; margin-top: 0;">Welcome to RunTribes, ${userName}!</h2>
               
               <p style="color: #ccc; line-height: 1.6;">
                 We're excited to have you join our running community! 
@@ -160,7 +160,7 @@ export const emailService = {
             </div>
             
             <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
-              <p>© 2024 RunTribe. All rights reserved.</p>
+              <p>© 2024 RunTribes. All rights reserved.</p>
             </div>
           </div>
         `

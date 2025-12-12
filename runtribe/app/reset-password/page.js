@@ -89,7 +89,7 @@ function ResetPasswordForm() {
       <div className="min-h-screen bg-[#1a1a1a] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-[#66ff00]">Run Tribe</h1>
+            <h1 className="text-3xl font-bold text-[#66ff00]">Run Tribes</h1>
             <h2 className="mt-6 text-3xl font-bold text-white">
               Invalid Reset Link
             </h2>
@@ -114,7 +114,7 @@ function ResetPasswordForm() {
     <div className="min-h-screen bg-[#1a1a1a] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-[#66ff00]">Run Tribe</h1>
+          <h1 className="text-3xl font-bold text-[#66ff00]">Run Tribes</h1>
           <h2 className="mt-6 text-3xl font-bold text-white">
             Set new password
           </h2>

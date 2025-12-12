@@ -17,7 +17,7 @@ const rl = readline.createInterface({
 const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
 async function setupEmail() {
-  console.log('🚀 RunTribe Email Service Setup\n');
+  console.log('🚀 RunTribes Email Service Setup\n');
   
   try {
     // Get environment

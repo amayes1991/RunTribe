@@ -13,7 +13,7 @@ export default function About() {
           <div className="flex items-center justify-between h-16">
             <div className="flex-shrink-0">
               <Link href="/" className="text-2xl font-bold text-[#66ff00] hover:text-[#52cc00] transition-colors">
-                Run Tribe
+                Run Tribes
               </Link>
             </div>
             <div className="hidden md:flex space-x-8">
@@ -54,7 +54,7 @@ export default function About() {
       <section className="bg-gradient-to-br from-[#1a1a1a] via-gray-900 to-[#1a1a1a] text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold mb-6 text-[#66ff00]">
-            About RunTribe
+            About RunTribes
           </h1>
           <p className="text-xl sm:text-2xl max-w-3xl mx-auto leading-relaxed text-gray-300">
             We're building the world's most connected running community, where every runner finds their tribe and every mile tells a story.
@@ -71,7 +71,7 @@ export default function About() {
                 Our Mission
               </h2>
               <p className="text-lg text-gray-300 mb-6 leading-relaxed">
-                At RunTribe, we believe that running is more than just exercise—it's a way of life that brings people together. Our mission is to create a global community where runners of all levels can connect, inspire, and support each other.
+                At RunTribes, we believe that running is more than just exercise—it's a way of life that brings people together. Our mission is to create a global community where runners of all levels can connect, inspire, and support each other.
               </p>
               <p className="text-lg text-gray-300 leading-relaxed">
                 Whether you're training for your first 5K or chasing a marathon PR, we're here to help you find your running family and make every step count.
@@ -100,7 +100,7 @@ export default function About() {
               Our Story
             </h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-              RunTribe was born from a simple observation: runners are some of the most supportive and inspiring people on the planet, but they often train alone.
+              RunTribes was born from a simple observation: runners are some of the most supportive and inspiring people on the planet, but they often train alone.
             </p>
           </div>
           

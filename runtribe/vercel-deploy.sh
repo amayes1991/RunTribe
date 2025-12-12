@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Vercel CLI Deployment Script for RunTribe Frontend
-echo "🚀 Deploying RunTribe Frontend to Vercel..."
+# Vercel CLI Deployment Script for RunTribes Frontend
+echo "🚀 Deploying RunTribes Frontend to Vercel..."
 
 # Check if Vercel CLI is installed
 if ! command -v vercel &> /dev/null; then

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Run Tribe",
+  title: "Run Tribes",
   description: "Connect with fellow runners, track your runs, and join groups.",
 };
 

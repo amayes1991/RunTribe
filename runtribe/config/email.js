@@ -5,7 +5,7 @@ const emailConfig = {
     provider: 'sendgrid',
     apiKey: process.env.SENDGRID_API_KEY,
     fromEmail: process.env.FROM_EMAIL || 'noreply@runtribe.com',
-    fromName: 'RunTribe',
+    fromName: 'RunTribes',
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     // For local development, you can use a test email service
     testMode: process.env.NODE_ENV === 'development',
@@ -18,7 +18,7 @@ const emailConfig = {
     provider: 'sendgrid',
     apiKey: process.env.SENDGRID_API_KEY,
     fromEmail: process.env.FROM_EMAIL || 'noreply@runtribe.com',
-    fromName: 'RunTribe',
+    fromName: 'RunTribes',
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.com',
     testMode: false,
     localProvider: 'sendgrid'
@@ -29,7 +29,7 @@ const emailConfig = {
     provider: 'console',
     apiKey: null,
     fromEmail: 'test@runtribe.com',
-    fromName: 'RunTribe Test',
+    fromName: 'RunTribes Test',
     baseUrl: 'http://localhost:3000',
     testMode: true,
     localProvider: 'console'

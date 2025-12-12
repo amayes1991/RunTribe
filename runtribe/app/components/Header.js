@@ -21,7 +21,7 @@ export default function Header() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/dashboard" className="text-2xl font-bold text-[#66ff00] hover:text-[#52cc00] transition-colors">
-               <span className="text-white">Run </span> Tribe
+               <span className="text-white">Run </span> Tribes
               </Link>
             </div>
             {/* Desktop Navigation */}
