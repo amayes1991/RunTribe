@@ -25,6 +25,20 @@ public class ImageUploadController : ControllerBase
         var supabaseUrl = _configuration["Supabase:Url"];
         var supabaseKey = _configuration["Supabase:ServiceKey"] ?? _configuration["Supabase:AnonKey"];
         _useSupabase = !string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey);
+        
+        // Log storage configuration
+        Console.WriteLine($"[ImageUpload] Storage Configuration:");
+        Console.WriteLine($"  Supabase URL: {(string.IsNullOrEmpty(supabaseUrl) ? "NOT SET" : "SET")}");
+        Console.WriteLine($"  Supabase Key: {(string.IsNullOrEmpty(supabaseKey) ? "NOT SET" : "SET")}");
+        Console.WriteLine($"  Using Supabase: {_useSupabase}");
+        if (!_useSupabase)
+        {
+            Console.WriteLine($"  [WARNING] Supabase not configured - using local file storage");
+            Console.WriteLine($"  To enable Supabase, set environment variables:");
+            Console.WriteLine($"    Supabase__Url=<your-supabase-url>");
+            Console.WriteLine($"    Supabase__ServiceKey=<your-service-key>");
+            Console.WriteLine($"    Supabase__BucketName=uploads (optional, defaults to 'uploads')");
+        }
 
         // Only initialize Supabase if configured
         if (_useSupabase)
@@ -45,12 +59,21 @@ public class ImageUploadController : ControllerBase
     [HttpGet("test")]
     public IActionResult Test()
     {
+        var supabaseUrl = _configuration["Supabase:Url"];
+        var supabaseKey = _configuration["Supabase:ServiceKey"] ?? _configuration["Supabase:AnonKey"];
+        var bucketName = _configuration["Supabase:BucketName"] ?? "uploads";
+        
         var result = new
         {
             message = "ImageUploadController is working!",
             webRootPath = _environment.WebRootPath,
             contentRootPath = _environment.ContentRootPath,
-            currentDirectory = Directory.GetCurrentDirectory()
+            currentDirectory = Directory.GetCurrentDirectory(),
+            storageType = _useSupabase ? "Supabase" : "Local File Storage",
+            supabaseConfigured = _useSupabase,
+            supabaseUrl = !string.IsNullOrEmpty(supabaseUrl) ? "Set" : "Not Set",
+            supabaseKey = !string.IsNullOrEmpty(supabaseKey) ? "Set" : "Not Set",
+            bucketName = bucketName
         };
         
         Console.WriteLine($"Test endpoint called: {System.Text.Json.JsonSerializer.Serialize(result)}");
@@ -97,7 +120,7 @@ public class ImageUploadController : ControllerBase
             if (_useSupabase && _supabaseStorage != null)
             {
                 // Upload to Supabase Storage
-                Console.WriteLine("Uploading to Supabase Storage...");
+                Console.WriteLine($"[ImageUpload] Uploading to Supabase Storage: {fileName} to folder: {type}");
                 
                 using (var stream = file.OpenReadStream())
                 {
@@ -107,12 +130,13 @@ public class ImageUploadController : ControllerBase
                 // For Supabase, the fullImageUrl is the public URL, use it as both
                 imageUrl = fullImageUrl;
                 
-                Console.WriteLine($"File uploaded to Supabase: {fullImageUrl}");
+                Console.WriteLine($"[ImageUpload] File uploaded to Supabase successfully: {fullImageUrl}");
             }
             else
             {
                 // Fallback to local file storage
-                Console.WriteLine("Using local file storage (Supabase not configured)");
+                Console.WriteLine($"[ImageUpload] Using LOCAL file storage (Supabase not configured)");
+                Console.WriteLine($"[ImageUpload] To use Supabase, configure Supabase:Url and Supabase:ServiceKey environment variables");
                 
                 var currentDir = Directory.GetCurrentDirectory();
                 var uploadsDir = Path.Combine(currentDir, "uploads", type);
