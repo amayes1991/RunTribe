@@ -25,23 +25,45 @@ public class SupabaseStorageService
             AutoConnectRealtime = false,
             AutoRefreshToken = false
         });
+        
+        // Initialize the client connection
+        try
+        {
+            _supabase.InitializeAsync().Wait();
+            Console.WriteLine($"[SupabaseStorage] Client initialized successfully for bucket: {_bucketName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SupabaseStorage] Warning: Failed to initialize client: {ex.Message}");
+            // Continue anyway - connection might be lazy
+        }
     }
 
     public async Task<string> UploadImageAsync(Stream fileStream, string fileName, string folder = "groups")
     {
         try
         {
+            // Ensure client is initialized
+            if (!_supabase.IsConnected)
+            {
+                await _supabase.InitializeAsync();
+            }
+
             // Ensure bucket exists (create if it doesn't)
             await EnsureBucketExistsAsync();
 
             // Upload file to Supabase Storage
             var filePath = $"{folder}/{fileName}";
             
+            Console.WriteLine($"[SupabaseStorage] Uploading {fileName} to bucket '{_bucketName}' at path '{filePath}'");
+            
             // Read stream into byte array for upload
             using (var memoryStream = new MemoryStream())
             {
                 await fileStream.CopyToAsync(memoryStream);
                 var fileBytes = memoryStream.ToArray();
+                
+                Console.WriteLine($"[SupabaseStorage] File size: {fileBytes.Length} bytes");
                 
                 var result = await _supabase.Storage
                     .From(_bucketName)
@@ -50,6 +72,8 @@ public class SupabaseStorageService
                         CacheControl = "3600",
                         Upsert = true
                     });
+                
+                Console.WriteLine($"[SupabaseStorage] Upload result: {result}");
             }
 
             // Get public URL
@@ -57,12 +81,17 @@ public class SupabaseStorageService
                 .From(_bucketName)
                 .GetPublicUrl(filePath);
 
+            Console.WriteLine($"[SupabaseStorage] Public URL: {publicUrl}");
             return publicUrl;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error uploading to Supabase Storage: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"[SupabaseStorage] Error uploading to Supabase Storage: {ex.Message}");
+            Console.WriteLine($"[SupabaseStorage] Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[SupabaseStorage] Inner exception: {ex.InnerException.Message}");
+            }
             throw;
         }
     }
