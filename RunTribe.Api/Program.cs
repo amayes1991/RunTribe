@@ -304,19 +304,8 @@ catch (Exception migrationEx)
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-// Only use HTTPS redirection in production
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-// Use appropriate CORS policy based on environment
+// CORS must be FIRST - preflight OPTIONS requests need CORS headers before any redirect or other middleware.
+// Railway's proxy can cause requests to behave differently; CORS first ensures headers are always added.
 if (app.Environment.IsDevelopment())
 {
     app.UseCors("AllowAll");
@@ -324,6 +313,18 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseCors("Production");
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// HTTPS redirection after CORS - redirect responses would otherwise lack CORS headers
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
 }
 
 // Serve static files from wwwroot

@@ -43,11 +43,8 @@ public class SupabaseStorageService
     {
         try
         {
-            // Ensure client is initialized
-            if (!_supabase.IsConnected)
-            {
-                await _supabase.InitializeAsync();
-            }
+            // Ensure client is initialized (InitializeAsync is idempotent)
+            await _supabase.InitializeAsync();
 
             // Ensure bucket exists (create if it doesn't)
             await EnsureBucketExistsAsync();
