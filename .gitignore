@@ -118,3 +118,6 @@ uploads/*
 
 # Railway
 .railway/
+
+# Vercel
+.vercel

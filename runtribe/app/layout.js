@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
           {children}
           <Footer />
         </Providers>
-        <Analytics />
+        <Analytics mode="production" />
       </body>
     </html>
   );
