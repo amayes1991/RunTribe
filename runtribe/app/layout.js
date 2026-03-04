@@ -28,8 +28,9 @@ export default function RootLayout({ children }) {
         <Providers>
           {children}
           <Footer />
+          <Analytics mode="production" />
         </Providers>
-        <Analytics mode="production" />
+  
       </body>
     </html>
   );
