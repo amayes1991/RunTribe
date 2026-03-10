@@ -27,6 +27,7 @@ vercel env add NEXTAUTH_URL
 vercel env add NEXTAUTH_SECRET
 vercel env add NEXT_PUBLIC_API_URL
 vercel env add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+vercel env add NEXT_PUBLIC_GA_MEASUREMENT_ID
 vercel env add SENDGRID_API_KEY
 vercel env add FROM_EMAIL
 
@@ -42,6 +43,7 @@ vercel --prod
 | `NEXTAUTH_SECRET` | Random secret for NextAuth | Generate with `openssl rand -base64 32` |
 | `NEXT_PUBLIC_API_URL` | Your API URL | `https://runtribe-api.railway.app` |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API key | `AIza...` |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics (GA4) Measurement ID | `G-XXXXXXXXXX` |
 | `SENDGRID_API_KEY` | SendGrid API key | `SG...` |
 | `FROM_EMAIL` | Email sender | `noreply@yourdomain.com` |
 
