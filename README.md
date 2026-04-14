@@ -74,7 +74,7 @@ The application uses SQLite with the following main entities:
 - **Comments**: Responses to posts
 - **Cities**: Location data for meetups
 
-## Development Notes
+## Development
 
 - The backend API runs on `https://localhost:7000` (or similar)
 - The frontend runs on `http://localhost:3000`
