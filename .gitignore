@@ -122,5 +122,5 @@ uploads/*
 # Vercel
 .vercel
 
-# Cursor (keep local-only if you recreate project hints)
+# Optional local editor hints (not shared)
 .cursorrules
