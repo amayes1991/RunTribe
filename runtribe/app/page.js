@@ -184,10 +184,13 @@ export default function Home() {
 
       {/* Hero Section */}
       <header className="relative bg-[#1a1a1a] h-screen overflow-hidden">
-        <img
+        <Image
           src="/run1.jpg"
           alt="Runners"
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-40"
         />
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white px-4">
           <h2 className="text-4xl sm:text-6xl font-extrabold mb-6 text-[#66ff00]">
